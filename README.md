@@ -65,10 +65,8 @@ If you do not trust the compiled executable, you can:
 1. Open Command Prompt as Administrator
 2. Install the required dependency:
 
-```bash
 pip install pymem
 
 3. Run the script by typing:
 
-```bash
 python CDScalePatcher.py
