@@ -40,8 +40,8 @@ def freeze_loop():
                 
                 # Overwrite the 'Large' font preset IDs if enabled
                 if enable_large_sub:
-                    pm.write_int(address_font_main, 1007)
-                    pm.write_int(address_font_fallback, 1006)
+                    pm.write_int(address_font_main, 1010)
+                    pm.write_int(address_font_fallback, 1009)
         except Exception:
             # If an error occurs (e.g., game closed), ignore silently to keep loop alive
             pass 
@@ -60,8 +60,8 @@ def toggle_freeze():
         # Revert font to default 'Large' (1006) if it was enabled
         if enable_large_sub and pm:
             try:
-                pm.write_int(address_font_main, 1006)
-                pm.write_int(address_font_fallback, 1005)
+                pm.write_int(address_font_main, 1009)
+                pm.write_int(address_font_fallback, 1008)
             except Exception:
                 pass
 
@@ -84,10 +84,10 @@ def toggle_freeze():
     process_name = "CrimsonDesert.exe"
     
     # Static Offsets
-    offset_ui = 0x5C399D8
-    offset_hud = 0x5C39A28
-    offset_font_main = 0x5BBE2B0      # Database offset for Large Font ID
-    offset_font_fallback = 0x5BBE2AC  # Database offset for Fallback Font ID
+    offset_ui = 0x5C491B8
+    offset_hud = 0x5C49208
+    offset_font_main = 0x5BCDA04      # Database offset for Large Font ID
+    offset_font_fallback = 0x5BCDA00  # Database offset for Fallback Font ID
 
     try:
         log_message(f"[*] Attaching to {process_name}...")
