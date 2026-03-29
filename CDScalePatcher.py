@@ -13,12 +13,9 @@ pm = None
 is_frozen = False
 address_ui = None
 address_hud = None
-address_font_main = None
-address_font_fallback = None
 
 val_ui = 100
 val_hud = 100
-enable_large_sub = False
 
 def log_message(msg):
     text_log.config(state=tk.NORMAL)
@@ -29,7 +26,6 @@ def log_message(msg):
 def freeze_loop():
     """This function runs in the background, writing to memory continuously."""
     global is_frozen, pm, address_ui, address_hud, val_ui, val_hud
-    global address_font_main, address_font_fallback, enable_large_sub
     
     while is_frozen:
         try:
@@ -37,11 +33,6 @@ def freeze_loop():
                 # Freeze UI and HUD scales
                 pm.write_int(address_ui, val_ui)
                 pm.write_int(address_hud, val_hud)
-                
-                # Overwrite the 'Large' font preset IDs if enabled
-                if enable_large_sub:
-                    pm.write_int(address_font_main, 1010)
-                    pm.write_int(address_font_fallback, 1009)
         except Exception:
             # If an error occurs (e.g., game closed), ignore silently to keep loop alive
             pass 
@@ -51,32 +42,21 @@ def freeze_loop():
 
 def toggle_freeze():
     global is_frozen, pm, address_ui, address_hud, val_ui, val_hud
-    global address_font_main, address_font_fallback, enable_large_sub
     
     # If currently running, the button will STOP the injection
     if is_frozen:
         is_frozen = False
         
-        # Revert font to default 'Large' (1006) if it was enabled
-        if enable_large_sub and pm:
-            try:
-                pm.write_int(address_font_main, 1009)
-                pm.write_int(address_font_fallback, 1008)
-            except Exception:
-                pass
-
         btn_apply.config(text="Apply & Freeze", bg="#f0f0f0")
         entry_ui.config(state=tk.NORMAL)
         entry_hud.config(state=tk.NORMAL)
-        chk_sub.config(state=tk.NORMAL)
         log_message("[*] Injection paused. Memory reverted.")
         return
 
     # If stopped, the button will START the injection
     try:
         val_ui = int(entry_ui.get())
-        val_hud = int(entry_hud.get())
-        enable_large_sub = chk_sub_var.get()
+        val_hud = int(hud_var.get())
     except ValueError:
         messagebox.showerror("Error", "Please enter valid numbers (e.g., 100).")
         return
@@ -84,10 +64,8 @@ def toggle_freeze():
     process_name = "CrimsonDesert.exe"
     
     # Static Offsets
-    offset_ui = 0x5C491B8
-    offset_hud = 0x5C49208
-    offset_font_main = 0x5BCDA04      # Database offset for Large Font ID
-    offset_font_fallback = 0x5BCDA00  # Database offset for Fallback Font ID
+    offset_ui = 0x5C74318
+    offset_hud = 0x5C74368
 
     try:
         log_message(f"[*] Attaching to {process_name}...")
@@ -99,9 +77,7 @@ def toggle_freeze():
         # Calculate final dynamic addresses
         address_ui = base_address + offset_ui
         address_hud = base_address + offset_hud
-        address_font_main = base_address + offset_font_main
-        address_font_fallback = base_address + offset_font_fallback
-        
+
         # Start the freeze mode
         is_frozen = True
         
@@ -109,11 +85,8 @@ def toggle_freeze():
         btn_apply.config(text="Stop Freezing", bg="#ffcccc")
         entry_ui.config(state=tk.DISABLED)
         entry_hud.config(state=tk.DISABLED)
-        chk_sub.config(state=tk.DISABLED)
         
         log_message(f"[+] Hooked! UI: {val_ui}, HUD: {val_hud}")
-        if enable_large_sub:
-            log_message("[+] Larger Subtitles Enabled!")
         
         # Create and start the background thread
         t = threading.Thread(target=freeze_loop, daemon=True)
@@ -126,12 +99,25 @@ def toggle_freeze():
         log_message(f"[-] Unexpected Error: {e}")
         messagebox.showerror("Error", f"Something went wrong:\n{e}")
 
+def check_hud_limit(*args):
+    """Checks the input in real-time and shows a warning if > 110."""
+    try:
+        val = int(hud_var.get())
+        if val > 110:
+            lbl_hud_warning.config(text="Warning: Values bigger than 110 will break the pause menu!")
+        else:
+            lbl_hud_warning.config(text="")
+    except ValueError:
+        # Se o campo ficar vazio ou digitarem texto, limpa o aviso
+        lbl_hud_warning.config(text="")
+
+
 # ==========================================
 # GUI Setup
 # ==========================================
 root = tk.Tk()
 root.title("Crimson Desert - Scale Patcher | by GabrielXQ")
-root.geometry("420x380")
+root.geometry("420x290")
 root.resizable(False, False)
 
 root.eval('tk::PlaceWindow . center')
@@ -139,34 +125,27 @@ root.eval('tk::PlaceWindow . center')
 frame_inputs = tk.Frame(root)
 frame_inputs.pack(pady=15)
 
+# UI Scale
 tk.Label(frame_inputs, text="UI Scale:", font=("Arial", 10)).grid(row=0, column=0, padx=5, pady=5, sticky="e")
 entry_ui = tk.Entry(frame_inputs, justify="center", font=("Arial", 11), width=12)
 entry_ui.grid(row=0, column=1, padx=5, pady=5)
 entry_ui.insert(0, "100")
 
+# HUD Scale Variable (Para monitorar as mudanças em tempo real)
+hud_var = tk.StringVar(value="100")
+hud_var.trace_add("write", check_hud_limit)
+
+# HUD Scale
 tk.Label(frame_inputs, text="HUD Scale:", font=("Arial", 10)).grid(row=1, column=0, padx=5, pady=5, sticky="e")
-entry_hud = tk.Entry(frame_inputs, justify="center", font=("Arial", 11), width=12)
+entry_hud = tk.Entry(frame_inputs, justify="center", font=("Arial", 11), width=12, textvariable=hud_var)
 entry_hud.grid(row=1, column=1, padx=5, pady=5)
-entry_hud.insert(0, "100")
 
-# Subtitle Checkbox
-chk_sub_var = tk.BooleanVar()
-chk_sub = tk.Checkbutton(root, text="Enable Larger Subtitles", variable=chk_sub_var, font=("Arial", 10))
-chk_sub.pack(pady=5)
-# Mini container
-frame_warning = tk.Frame(root)
-frame_warning.pack(pady=(0, 10))
-
-# Text in red
-lbl_warning = tk.Label(frame_warning, text="Warning:", fg="red", font=("Arial", 9, "bold"))
-lbl_warning.pack(side=tk.LEFT)
-
-# Text after warning
-lbl_desc = tk.Label(frame_warning, text="In-game subtitle size must be set to 'Large'.", font=("Arial", 9))
-lbl_desc.pack(side=tk.LEFT)
+# Warning Label (Fica invisível por padrão, ocupando as duas colunas)
+lbl_hud_warning = tk.Label(frame_inputs, text="", fg="red", font=("Arial", 8, "bold"))
+lbl_hud_warning.grid(row=2, column=0, columnspan=2, pady=0)
 
 btn_apply = tk.Button(root, text="Apply & Freeze", command=toggle_freeze, font=("Arial", 10, "bold"), bg="#f0f0f0", width=15)
-btn_apply.pack(pady=10)
+btn_apply.pack(pady=5)
 
 tk.Label(root, text="Debug Log:", font=("Arial", 9)).pack(anchor="w", padx=20)
 text_log = tk.Text(root, height=8, width=50, font=("Consolas", 9), bg="#1e1e1e", fg="#00ff00", state=tk.DISABLED)
