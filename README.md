@@ -35,8 +35,50 @@ Because the game was not designed to scale beyond 100%, setting very high values
 
 ### Important
 
-You must leave the tool running in the background while playing.  
+You must leave the tool running in the background while playing.
 If you close it, the game will revert the UI scale back to 100%.
+
+---
+
+## Auto-Patcher (Steam Launch Integration)
+
+A command-line version (`CDScalePatcherAuto`) that automatically patches the game when launched through Steam. No manual clicking required.
+
+### Setup
+
+1. Download `CDScalePatcherAuto.exe` from the Releases tab (or build from `CDScalePatcherAuto.py`).
+2. Place it in a permanent location, e.g. `C:\Tools\CDScalePatcherAuto.exe`.
+3. In Steam, right-click **Crimson Desert** > **Properties** > **Launch Options**, paste:
+
+```
+cmd /c start "" "C:\Tools\CDScalePatcherAuto.exe" --ui 100 --hud 100 & %command%
+```
+
+### Available Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--ui <value>` | UI scale value | 100 |
+| `--hud <value>` | HUD scale value | 100 |
+| `--subs` | Enable larger subtitles | off |
+| `--wait <seconds>` | Max seconds to wait for game process | 120 |
+
+### Example
+
+With custom scale values and larger subtitles enabled:
+
+```
+cmd /c start "" "C:\Tools\CDScalePatcherAuto.exe" --ui 120 --hud 120 --subs & %command%
+```
+
+A console window will appear showing the patcher status. It auto-attaches once the game loads and exits when the game closes.
+
+### Running Manually
+
+```
+pip install pymem
+python CDScalePatcherAuto.py --ui 120 --hud 120 --subs
+```
 
 ---
 
